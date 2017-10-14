@@ -12,7 +12,6 @@ Press any key to continue, ESC to stop.
 import time
 import numpy as np
 import cv2
-import cv
 
 # https://github.com/opencv/opencv/blob/master/samples/python/peopledetect.py
 def inside(r, q):
@@ -40,7 +39,7 @@ if __name__ == '__main__':
     hog.setSVMDetector( cv2.HOGDescriptor_getDefaultPeopleDetector() )
 
     cascade = cv2.CascadeClassifier()
-    cascade.load("Head/haarcascade_upperbody.xml")
+    cascade.load("cascades/cascadG.xml")
 
 
     default = ['../data/basketball2.png '] if len(sys.argv[1:]) == 0 else []
@@ -53,9 +52,9 @@ if __name__ == '__main__':
     while vid.isOpened():
         (status, frame) = vid.read()
         frame = cv2.resize(frame, (0,0), fx=.3, fy=.3)
-#	frame_masked = fgbg.apply(frame)
-        found = hog.detectMultiScale(frame, minNeighbors=2, minSize=(50,50), maxSize = (200, 200))
+        #frame_masked = fgbg.apply(frame)
         #frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        found = cascade.detectMultiScale(frame, minNeighbors=2, minSize=(50,50), maxSize = (200, 200))
 
         found_filtered = []
         for ri, r in enumerate(found):
