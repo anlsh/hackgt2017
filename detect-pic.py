@@ -1,4 +1,5 @@
 from __future__ import print_function
+import time
 
 
 """
@@ -27,7 +28,6 @@ def draw_detections(img, rects, thickness = 1):
         pad_w, pad_h = int(0.15*w), int(0.05*h)
         cv2.rectangle(img, (x+pad_w, y+pad_h), (x+w-pad_w, y+h-pad_h), (0, 255, 0), thickness)
 
-
 if __name__ == '__main__':
     import sys
     from glob import glob
@@ -46,29 +46,24 @@ if __name__ == '__main__':
 
     fgbg = cv2.BackgroundSubtractorMOG2()
 
-    vid = cv2.VideoCapture()
-    vid.open("vidstab.mp4")
+    img = cv2.imread("peeps.jpeg")
 
-    while vid.isOpened():
-        (status, frame) = vid.read()
-        frame = cv2.resize(frame, (0,0), fx=.3, fy=.3)
-        #frame_masked = fgbg.apply(frame)
-        #frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        found = cascade.detectMultiScale(frame, minNeighbors=2, minSize=(50,50), maxSize = (200, 200))
+    frame = cv2.resize(img, (0,0), fx=.3, fy=.3)
+    found = cascade.detectMultiScale(frame, minNeighbors=4, maxSize = (200, 200))
 
-        found_filtered = []
-        for ri, r in enumerate(found):
-            for qi, q in enumerate(found):
-                if ri != qi and inside(r, q):
-                    break
-                else:
-                    found_filtered.append(r)
-        draw_detections(frame, found)
-        draw_detections(frame, found_filtered, 3)
-        print('%d (%d) found' % (len(found_filtered), len(found)))
-        cv2.imshow('img', frame)
+    found_filtered = []
+    for ri, r in enumerate(found):
+        for qi, q in enumerate(found):
+            if ri != qi and inside(r, q):
+                break
+            else:
+                found_filtered.append(r)
+    draw_detections(frame, found)
+    draw_detections(frame, found_filtered, 3)
+    print('%d (%d) found' % (len(found_filtered), len(found)))
+    cv2.imshow('img', frame)
 
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            exit()
+    if cv2.waitKey(0) & 0xFF == ord('q'):
+        exit()
 
-vid.release()
+img.release()

@@ -1,19 +1,20 @@
-#!/usr/bin/env python
+from __future__ import print_function
+import time
 
+
+"""
 '''
 example to detect upright people in images using HOG features
 Usage:
     peopledetect.py <image_names>
 Press any key to continue, ESC to stop.
 '''
-
-# Python 2/3 compatibility
-from __future__ import print_function
-
+"""
+import time
 import numpy as np
 import cv2
 
-
+# https://github.com/opencv/opencv/blob/master/samples/python/peopledetect.py
 def inside(r, q):
     rx, ry, rw, rh = r
     qx, qy, qw, qh = q
@@ -27,7 +28,6 @@ def draw_detections(img, rects, thickness = 1):
         pad_w, pad_h = int(0.15*w), int(0.05*h)
         cv2.rectangle(img, (x+pad_w, y+pad_h), (x+w-pad_w, y+h-pad_h), (0, 255, 0), thickness)
 
-
 if __name__ == '__main__':
     import sys
     from glob import glob
@@ -38,32 +38,39 @@ if __name__ == '__main__':
     hog = cv2.HOGDescriptor()
     hog.setSVMDetector( cv2.HOGDescriptor_getDefaultPeopleDetector() )
 
-    default = ['person_029.jpeg'] if len(sys.argv[1:]) == 0 else []
+    cascade = cv2.CascadeClassifier()
+    cascade.load("cascades/cascadG.xml")
 
-    for fn in it.chain(*map(glob, default + sys.argv[1:])):
-        print(fn, ' - ',)
-        try:
-            img = cv2.imread(fn)
-            if img is None:
-                print('Failed to load image file:', fn)
-                continue
-        except:
-            print('loading error')
-            continue
 
-        found, w = hog.detectMultiScale(img, winStride=(8,8), padding=(32,32), scale=1.05)
+    default = ['../data/basketball2.png '] if len(sys.argv[1:]) == 0 else []
+
+    fgbg = cv2.BackgroundSubtractorMOG2()
+
+    vid = cv2.VideoCapture()
+    vid.open("peeps.jpeg")
+
+    while vid.isOpened():
+        (status, frame) = vid.read()
+        frame = cv2.resize(frame, (0,0), fx=.3, fy=.3)
+        #frame_masked = fgbg.apply(frame)
+        #frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        found = cascade.detectMultiScale(frame, minNeighbors=4, maxSize = (200, 200))
+        # found = hog.detectMultiScale(frame)
+
         found_filtered = []
         for ri, r in enumerate(found):
             for qi, q in enumerate(found):
                 if ri != qi and inside(r, q):
                     break
-            else:
-                found_filtered.append(r)
-        draw_detections(img, found)
-        draw_detections(img, found_filtered, 3)
+                else:
+                    found_filtered.append(r)
+        draw_detections(frame, found)
+        draw_detections(frame, found_filtered, 3)
         print('%d (%d) found' % (len(found_filtered), len(found)))
-        cv2.imshow('img', img)
-        ch = cv2.waitKey()
-        if ch == 27:
-            break
-cv2.destroyAllWindows()
+        cv2.imshow('img', frame)
+
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            exit()
+        time.sleep(10)
+
+vid.release()
