@@ -87,7 +87,7 @@ class Rectifier():
 
     def filter(self, boxes):
         toRet = []
-        if len(self.old_boxes) < self.MEMORY_DEPTH:
+        if len(self.old_boxes) <= self.MEMORY_DEPTH:
             self.old_boxes.appendleft(boxes)
             return boxes
         else:
