@@ -72,6 +72,7 @@ def detect_frame(cascade, frame):
     print('%d (%d) found' % (len(found_filtered), len(found)))
     cv2.imshow('headhunter', frame)
 
+
 def get_cascade():
 
     cascade = cv2.CascadeClassifier()
@@ -84,7 +85,7 @@ if __name__ == '__main__':
     from glob import glob
     import itertools as it
 
-    print(sys.argv)
+#   print(sys.argv)
     cascade = get_cascade()
     detector = detect_vid if sys.argv[1] == "v" else detect_picture
     detector(cascade, sys.argv[2])
