@@ -55,6 +55,8 @@ def detect_vid(cascade, filename, smoothlist=False):
     while vid.isOpened():
         for i in range(5):
             (status, frame) = vid.read()
+            if frame is None:
+                break
         detect_frame(cascade, (0, frame), rectifier)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -76,7 +78,7 @@ def detect_frame(cascade, frame_info, rectifier=None):
     scale = 1.0
     MAX_WIDTH = float(700)
     if frame is  None:
-        exit()
+        return
     elif frame.shape[0] > MAX_WIDTH:
         scale = MAX_WIDTH / frame.shape[0]
 
@@ -171,12 +173,15 @@ def wait_time_calc():
         i = 0
         while not q.empty():
             data = q.get()
-            wait_time = 10*data.rect_count
-            if not frame_info.contains(Query()['frame_id'] == data.frame_num):
-                frame_info.insert({'frame_id': data.frame_num, 'num_rectangles': data.rect_count, 'wait_time': wait_time})
+            try:
+                wait_time = 10*data.rect_count
+                if not frame_info.contains(Query()['frame_id'] == data.frame_num):
+                    frame_info.insert({'frame_id': data.frame_num, 'num_rectangles': data.rect_count, 'wait_time': wait_time})
 
-            rectangles.insert({'uid': data.uid, 'frame_num': data.frame_num, 'coordinates': data.coordinates.tolist()})
-            # Use the rect_count variable to calculate a temporary wait time 
+                rectangles.insert({'uid': data.uid, 'frame_num': data.frame_num, 'coordinates': data.coordinates.tolist()})
+                # Use the rect_count variable to calculate a temporary wait time
+            except:
+                pass
 
 if __name__ == '__main__':
     import sys
