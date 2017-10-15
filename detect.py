@@ -1,5 +1,4 @@
 from __future__ import print_function
-import time
 
 
 """
@@ -11,6 +10,7 @@ Press any key to continue, ESC to stop.
 '''
 """
 import time
+import sys
 import numpy as np
 import cv2
 
@@ -28,32 +28,36 @@ def draw_detections(img, rects, thickness = 1):
         pad_w, pad_h = int(0.15*w), int(0.05*h)
         cv2.rectangle(img, (x+pad_w, y+pad_h), (x+w-pad_w, y+h-pad_h), (0, 255, 0), thickness)
 
-if __name__ == '__main__':
-    import sys
-    from glob import glob
-    import itertools as it
+def detect_vid(cascade, filename):
+    vid = cv2.VideoCapture()
+    vid.open(filename)
 
-    print(__doc__)
+    while vid.isOpened():
+        (status, frame) = vid.read()
+        detect_frame(cascade, frame)
 
-    hog = cv2.HOGDescriptor()
-    hog.setSVMDetector( cv2.HOGDescriptor_getDefaultPeopleDetector() )
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            return
 
-    cascade = cv2.CascadeClassifier()
-    cascade.load("cascades/case.xml")
+    vid.release()
 
+def detect_picture(cascade, filename):
 
-    default = ['../data/basketball2.png '] if len(sys.argv[1:]) == 0 else []
+    img = cv2.imread(filename)
+    detect_frame(cascade, img)
 
-    fgbg = cv2.BackgroundSubtractorMOG2()
+    if cv2.waitKey(0) & 0xFF == ord('q'):
+        pass
 
-    img = cv2.imread("ap3.jpeg")
+def detect_frame(cascade, frame):
 
-    width = img.cols
-    scale = 1
-    if width > 1000:
-        scale = (1000 / width)
+    print(frame.shape)
+    scale = 1.0
+    MAX_WIDTH = float(700)
+    if frame.shape[0] > MAX_WIDTH:
+        scale = MAX_WIDTH / frame.shape[0]
 
-    frame = cv2.resize(img, (0,0), fx=scale, fy=scale)
+    frame = cv2.resize(frame, (0,0), fx=scale, fy=scale)
     found = cascade.detectMultiScale(frame, minNeighbors=4, maxSize = (200, 200))
 
     found_filtered = []
@@ -66,6 +70,21 @@ if __name__ == '__main__':
     draw_detections(frame, found)
     draw_detections(frame, found_filtered, 3)
     print('%d (%d) found' % (len(found_filtered), len(found)))
-    cv2.imshow('img', frame)
+    cv2.imshow('headhunter', frame)
 
-img.release()
+def get_cascade():
+
+    cascade = cv2.CascadeClassifier()
+    cascade.load("cascades/fullbody_good.xml")
+    return cascade
+
+
+if __name__ == '__main__':
+    import sys
+    from glob import glob
+    import itertools as it
+
+    print(sys.argv)
+    cascade = get_cascade()
+    detector = detect_vid if sys.argv[1] == "v" else detect_picture
+    detector(cascade, sys.argv[2])
