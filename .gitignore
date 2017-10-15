@@ -1,3 +1,7 @@
 *.mp4
+<<<<<<< HEAD
 *.jpg
 db.json
+=======
+*.jpeg
+>>>>>>> 5eae08438bb00309d72089c1d6f75eefe6952f7b
