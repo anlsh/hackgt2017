@@ -1,7 +1,6 @@
 from __future__ import print_function
 from collections import deque as dq
-
-
+from tinydb import TinyDB, Query
 """
 '''
 example to detect upright people in images using HOG features
@@ -13,7 +12,20 @@ Press any key to continue, ESC to stop.
 import time
 import sys
 import numpy as np
+import threading
 import cv2
+
+db = TinyDB('db.json')
+frame_info = db.table('frame_info')
+rectangles = db.table('rectangles')
+q = Queue.Queue()
+
+class rectangleData:
+    def __init__(self, uid, coordinates, frame_num, rect_count):
+        self.uid = uid
+        self.coordinates = coordinates
+        self.frame_num = frame_num
+        self.rect_count = rect_count
 
 # https://github.com/opencv/opencv/blob/master/samples/python/peopledetect.py
 def inside(r, q):
@@ -70,10 +82,9 @@ def detect_frame(cascade, frame, rectifier=None):
     draw_detections(frame, found, 2)
     # draw_detections(frame, found_filtered, 3)
     # print('%d (%d) found' % (len(found_filtered), len(found)))
+
     cv2.imshow('headhunter', frame)
 
-<<<<<<< HEAD
-=======
 def _dist(box1, box2):
     c1 = (box1[0] + box1[2]/2, box1[1] + box1[3]/2)
     c2 = (box2[0] + box2[2]/2, box2[1] + box2[3]/2)
@@ -100,15 +111,23 @@ class Rectifier():
 
             return toRet
 
-
->>>>>>> 5eae08438bb00309d72089c1d6f75eefe6952f7b
-
 def get_cascade():
-
     cascade = cv2.CascadeClassifier()
     cascade.load("cascades/fullbody_good.xml")
     return cascade
 
+def wait_time_calc():
+    while not q.empty():
+        data = q.pop()
+        wait_time = 10*data.rect_count
+        if not frame_info.contains(where('frame_id') == data.frame_num):
+            frame_info.insert({'frame_id': data.frame_num, 'num_rectangles': data.rect_count, 'wait_time': wait_time})
+
+        rectangles.insert({'uid': data.uid, 'frame_num': data.frame_num, 'coordinates': data.coordinates})
+        # Use the rect_count variable to calculate a temporary wait time 
+
+    db.purge_tables()
+    db.purge()
 
 if __name__ == '__main__':
     import sys
@@ -119,3 +138,8 @@ if __name__ == '__main__':
     cascade = get_cascade()
     detector = detect_vid if sys.argv[1] == "v" else detect_picture
     detector(cascade, sys.argv[2])
+
+    threads = []
+    wait_time_thread = threading.Thread(name = "wait_time_calc", target = wait_time_calc)
+    threads.append(wait_time_thread)
+    wait_time_thread.start()
