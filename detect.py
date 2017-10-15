@@ -55,7 +55,6 @@ def detect_picture(cascade, filename):
 
 def detect_frame(cascade, frame, rectifier=None):
 
-    print(frame.shape)
     scale = 1.0
     MAX_WIDTH = float(700)
     if frame.shape[0] > MAX_WIDTH:
@@ -75,49 +74,80 @@ def detect_frame(cascade, frame, rectifier=None):
 <<<<<<< HEAD
 =======
 def _dist(box1, box2):
-    c1 = (box1[0] + box1[2]/2, box1[1] + box1[3]/2)
-    c2 = (box2[0] + box2[2]/2, box2[1] + box2[3]/2)
+    c1 = _center(box1)
+    c2 = _center(box2)
     return ((c1[0] - c2[0])**2 + (c1[1] - c2[1])**2)
+
+def _center(box):
+    return((box[0] + box[2]/2, box[1] + box[3]/2))
 
 class Rectifier():
 
     def __init__(self):
         self.MEMORY_DEPTH = 1
         self.MAX_JUMP = 450
-        self.cell_size = 50
+        self.cell_size = 200
         self.old_boxes = dq()
 
-    def package(boxes):
+    def package(self, boxes):
         cells = {}
         for b in boxes:
-            cellx = int(b[0] / cell_size)
-            celly = int(b[1] / cell_size)
-            if cells[(cellx, celly)] is None:
-                cells[(cellx, celly)] = list(b)
+            cell = self.getcell(b)
+            if cells.get(cell, None) is None:
+                cells[cell] = list(b)
             else:
-                cells[(cellx, celly)].append(b)
+                cells[cell].append(b)
 
         return cells
 
+    def nearcells(self, cell):
+        """
+        Return the cell-coords of the 3x3 grid including current cell
+        """
+        (x, y) = cell
+        return [(x-1, y+1), (x-1, y), (x-1, y-1),
+                (x, y+1), (x, y), (x, y-1),
+                (x+1, y+1), (x+1, y), (x+1, y-1)]
+
+    def getcell(self, box):
+        """Return cell coords of the center of the box"""
+        cent = _center(box)
+        return (int(cent[0] % self.cell_size), int(cent[1] % self.cell_size))
 
     def filter(self, boxes):
         toRet = []
+        boxmap = self.package(boxes)
         if len(self.old_boxes) <= self.MEMORY_DEPTH:
-            self.old_boxes.appendleft(boxes)
+            self.old_boxes.appendleft(boxmap)
             return boxes
         else:
             for b in boxes:
-                leap = max([min([_dist(b, o) for o in oset]) for oset in self.old_boxes])
+                leap = 0
+                bcell = self.getcell(b)
+                for bmap in self.old_boxes:
+                    minor_leap = 10000000000000
+                    for ncell in self.nearcells(bcell):
+                        cboxes = bmap.get(ncell, None)
+                        if not cboxes:
+                            cboxes = []
+                        for c in cboxes:
+                            minor_leap = min(minor_leap, _dist(b, c))
+                    leap = max(minor_leap, leap)
+
                 if leap <= self.MAX_JUMP:
                     toRet.append(b)
+
             self.old_boxes.pop()
-            self.old_boxes.appendleft(boxes)
+            self.old_boxes.appendleft(boxmap)
 
             return toRet
 
+<<<<<<< 05b7e32a33f1bf70e43755dfcb23b1cbd04d64fa
 
 >>>>>>> 5eae08438bb00309d72089c1d6f75eefe6952f7b
 
+=======
+>>>>>>> Continue working on rectifier
 def get_cascade():
 
     cascade = cv2.CascadeClassifier()
