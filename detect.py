@@ -92,6 +92,7 @@ def detect_frame(cascade, frame_info, rectifier=None):
     for rectangle in filtered_boxes:
         q.put((0, rectangle, frame_num, len(filtered_boxes)))
 
+    print("High density detected!")
     cv2.imshow('headhunter', frame)
     return 1
 
