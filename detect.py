@@ -55,7 +55,6 @@ def detect_picture(cascade, filename):
 
 def detect_frame(cascade, frame, rectifier=None):
 
-    print(frame.shape)
     scale = 1.0
     MAX_WIDTH = float(700)
     if frame.shape[0] > MAX_WIDTH:
@@ -85,17 +84,18 @@ def _center(box):
 class Rectifier():
 
     def __init__(self):
-        self.MEMORY_DEPTH = 1
-        self.MAX_JUMP = 450
-        self.cell_size = 200
+        self.MEMORY_DEPTH = 2
+        self.cell_size = 500
         self.old_boxes = dq()
 
     def package(self, boxes):
         cells = {}
         for b in boxes:
+            b = tuple(b)
             cell = self.getcell(b)
             if cells.get(cell, None) is None:
-                cells[cell] = list(b)
+                cells[cell] = list()
+                cells[cell].append(b)
             else:
                 cells[cell].append(b)
 
@@ -113,7 +113,7 @@ class Rectifier():
     def getcell(self, box):
         """Return cell coords of the center of the box"""
         cent = _center(box)
-        return (int(cent[0] % self.cell_size), int(cent[1] % self.cell_size))
+        return (int(cent[0] / self.cell_size), int(cent[1] / self.cell_size))
 
     def filter(self, boxes):
         toRet = []
@@ -135,7 +135,7 @@ class Rectifier():
                             minor_leap = min(minor_leap, _dist(b, c))
                     leap = max(minor_leap, leap)
 
-                if leap <= self.MAX_JUMP:
+                if leap <= 2*self.cell_size:
                     toRet.append(b)
 
             self.old_boxes.pop()
