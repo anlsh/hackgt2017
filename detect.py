@@ -61,6 +61,7 @@ def detect_frame(cascade, frame, rectifier=None):
     if frame.shape[0] > MAX_WIDTH:
         scale = MAX_WIDTH / frame.shape[0]
 
+    #frame = frame[int(frame.shape[0]/2), ]
     frame = cv2.resize(frame, (0,0), fx=scale, fy=scale)
     found = cascade.detectMultiScale(frame, minNeighbors=2, maxSize = (200, 200))
     if rectifier:
@@ -78,8 +79,8 @@ def _dist(box1, box2):
 
 class Rectifier():
     def __init__(self):
-        self.MEMORY_DEPTH = 5
-        self.MAX_JUMP = 10000
+        self.MEMORY_DEPTH = 2
+        self.MAX_JUMP = 400
         self.old_boxes = dq()
 
     def filter(self, boxes):
