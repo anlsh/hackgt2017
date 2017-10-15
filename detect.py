@@ -50,8 +50,8 @@ def detect_vid(cascade, filename, smoothlist=False):
     j = 1
     while vid.isOpened():
         for i in range(5):
-            (status, (frame, j)) = vid.read()
-        detect_frame(cascade, frame, rectifier)
+            (status, frame) = vid.read()
+        detect_frame(cascade, (frame, 0), rectifier)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             return
@@ -82,7 +82,7 @@ def detect_frame(cascade, frame_info, rectifier=None):
     # draw_detections(frame, found_filtered, 3)
     # print('%d (%d) found' % (len(found_filtered), len(found)))
     for rectangle in found:
-        q.push(0, rectangle, frame_num, len(found))
+        q.put((0, rectangle, frame_num, len(found)))
 
     cv2.imshow('headhunter', frame)
 
