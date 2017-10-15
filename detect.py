@@ -71,8 +71,6 @@ def detect_frame(cascade, frame, rectifier=None):
     # print('%d (%d) found' % (len(found_filtered), len(found)))
     cv2.imshow('headhunter', frame)
 
-<<<<<<< HEAD
-=======
 def _dist(box1, box2):
     c1 = _center(box1)
     c2 = _center(box2)
@@ -143,12 +141,6 @@ class Rectifier():
 
             return toRet
 
-<<<<<<< 05b7e32a33f1bf70e43755dfcb23b1cbd04d64fa
-
->>>>>>> 5eae08438bb00309d72089c1d6f75eefe6952f7b
-
-=======
->>>>>>> Continue working on rectifier
 def get_cascade():
 
     cascade = cv2.CascadeClassifier()
