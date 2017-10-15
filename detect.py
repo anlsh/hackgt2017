@@ -58,7 +58,9 @@ def detect_vid(cascade, filename, smoothlist=False):
                 break
         j = detect_frame(cascade, (0, frame), rectifier)
 
-        if cv2.waitKey(1) & 0xFF == ord('q') or j is None:
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            exit()
+        elif j is None:
             return
 
     vid.release()
@@ -195,5 +197,9 @@ if __name__ == '__main__':
     threads.append(wait_time_thread)
     wait_time_thread.start()
     cascade = get_cascade()
+
+    file_list = ["crcvid3.mp4", "crcvid2.mp4", "crcvid1.mp4"]
     detector = detect_vid if sys.argv[1] == "v" else detect_picture
-    detector(cascade, sys.argv[2])
+    for i in file_list:
+        file_list.append(i)
+        detector(cascade, i)
