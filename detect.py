@@ -55,6 +55,7 @@ def detect_picture(cascade, filename):
 
 def detect_frame(cascade, frame, rectifier=None):
 
+    print(frame.shape)
     scale = 1.0
     MAX_WIDTH = float(700)
     if frame.shape[0] > MAX_WIDTH:
@@ -79,7 +80,7 @@ def _dist(box1, box2):
     return ((c1[0] - c2[0])**2 + (c1[1] - c2[1])**2)
 
 def _center(box):
-    return((box[0] + box[2]/2, box[1] + box[3]/2))
+    return (box[0] + box[2]/2, box[1] + box[3]/2)
 
 class Rectifier():
 
