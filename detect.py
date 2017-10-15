@@ -1,4 +1,5 @@
 from __future__ import print_function
+from collections import deque as dq
 
 
 """
@@ -23,18 +24,21 @@ def inside(r, q):
 
 def draw_detections(img, rects, thickness = 1):
     for x, y, w, h in rects:
-        # the HOG detector returns slightly larger rectangles than the real objects.
-        # so we slightly shrink the rectangles to get a nicer output.
+        # the HOG detector returns slightly larger boxes than the real objects.
+        # so we slightly shrink the boxes to get a nicer output.
         pad_w, pad_h = int(0.15*w), int(0.05*h)
         cv2.rectangle(img, (x+pad_w, y+pad_h), (x+w-pad_w, y+h-pad_h), (0, 255, 0), thickness)
 
-def detect_vid(cascade, filename):
+def detect_vid(cascade, filename, smoothlist=False):
     vid = cv2.VideoCapture()
     vid.open(filename)
 
+    rectifier = Rectifier()
+
     while vid.isOpened():
-        (status, frame) = vid.read()
-        detect_frame(cascade, frame)
+        for i in range(5):
+            (status, frame) = vid.read()
+        detect_frame(cascade, frame, rectifier)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             return
@@ -49,7 +53,7 @@ def detect_picture(cascade, filename):
     if cv2.waitKey(0) & 0xFF == ord('q'):
         pass
 
-def detect_frame(cascade, frame):
+def detect_frame(cascade, frame, rectifier=None):
 
     print(frame.shape)
     scale = 1.0
@@ -58,19 +62,42 @@ def detect_frame(cascade, frame):
         scale = MAX_WIDTH / frame.shape[0]
 
     frame = cv2.resize(frame, (0,0), fx=scale, fy=scale)
-    found = cascade.detectMultiScale(frame, minNeighbors=4, maxSize = (200, 200))
+    found = cascade.detectMultiScale(frame, minNeighbors=2, maxSize = (200, 200))
+    if rectifier:
+        found = rectifier.filter(found)
 
-    found_filtered = []
-    for ri, r in enumerate(found):
-        for qi, q in enumerate(found):
-            if ri != qi and inside(r, q):
-                break
-            else:
-                found_filtered.append(r)
-    draw_detections(frame, found)
-    draw_detections(frame, found_filtered, 3)
-    print('%d (%d) found' % (len(found_filtered), len(found)))
+    draw_detections(frame, found, 2)
+    # draw_detections(frame, found_filtered, 3)
+    # print('%d (%d) found' % (len(found_filtered), len(found)))
     cv2.imshow('headhunter', frame)
+
+def _dist(box1, box2):
+    c1 = (box1[0] + box1[2]/2, box1[1] + box1[3]/2)
+    c2 = (box2[0] + box2[2]/2, box2[1] + box2[3]/2)
+    return ((c1[0] - c2[0])**2 + (c1[1] - c2[1])**2)
+
+class Rectifier():
+    def __init__(self):
+        self.MEMORY_DEPTH = 5
+        self.MAX_JUMP = 10000
+        self.old_boxes = dq()
+
+    def filter(self, boxes):
+        toRet = []
+        if len(self.old_boxes) < self.MEMORY_DEPTH:
+            self.old_boxes.appendleft(boxes)
+            return boxes
+        else:
+            for b in boxes:
+                leap = max([min([_dist(b, o) for o in oset]) for oset in self.old_boxes])
+                if leap <= self.MAX_JUMP:
+                    toRet.append(b)
+            self.old_boxes.pop()
+            self.old_boxes.appendleft(boxes)
+
+            return toRet
+
+
 
 def get_cascade():
 
