@@ -49,17 +49,16 @@ def detect_vid(cascade, filename, smoothlist=False):
 
     vid = cv2.VideoCapture()
     vid.open(filename)
-
-    rectifier = Rectifier()
     j = 1
+    rectifier = Rectifier()
     while vid.isOpened():
         for i in range(5):
             (status, frame) = vid.read()
             if frame is None:
                 break
-        detect_frame(cascade, (0, frame), rectifier)
+        j = detect_frame(cascade, (0, frame), rectifier)
 
-        if cv2.waitKey(1) & 0xFF == ord('q'):
+        if cv2.waitKey(1) & 0xFF == ord('q') or j is None:
             return
 
     vid.release()
@@ -78,7 +77,7 @@ def detect_frame(cascade, frame_info, rectifier=None):
     scale = 1.0
     MAX_WIDTH = float(700)
     if frame is  None:
-        return
+        return None
     elif frame.shape[0] > MAX_WIDTH:
         scale = MAX_WIDTH / frame.shape[0]
 
@@ -92,6 +91,7 @@ def detect_frame(cascade, frame_info, rectifier=None):
         q.put((0, rectangle, frame_num, len(filtered_boxes)))
 
     cv2.imshow('headhunter', frame)
+    return 1
 
 def _dist(box1, box2):
     c1 = _center(box1)
