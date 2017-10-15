@@ -80,10 +80,25 @@ def _dist(box1, box2):
     return ((c1[0] - c2[0])**2 + (c1[1] - c2[1])**2)
 
 class Rectifier():
+
     def __init__(self):
-        self.MEMORY_DEPTH = 2
-        self.MAX_JUMP = 400
+        self.MEMORY_DEPTH = 1
+        self.MAX_JUMP = 450
+        self.cell_size = 50
         self.old_boxes = dq()
+
+    def package(boxes):
+        cells = {}
+        for b in boxes:
+            cellx = int(b[0] / cell_size)
+            celly = int(b[1] / cell_size)
+            if cells[(cellx, celly)] is None:
+                cells[(cellx, celly)] = list(b)
+            else:
+                cells[(cellx, celly)].append(b)
+
+        return cells
+
 
     def filter(self, boxes):
         toRet = []
