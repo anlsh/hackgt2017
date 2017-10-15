@@ -14,13 +14,14 @@ import sys
 import numpy as np
 import threading
 import cv2
+import Queue
 
 db = TinyDB('db.json')
 frame_info = db.table('frame_info')
 rectangles = db.table('rectangles')
 q = Queue.Queue()
 
-class rectangleData:
+class RectangleData:
     def __init__(self, uid, coordinates, frame_num, rect_count):
         self.uid = uid
         self.coordinates = coordinates
@@ -46,10 +47,10 @@ def detect_vid(cascade, filename, smoothlist=False):
     vid.open(filename)
 
     rectifier = Rectifier()
-
+    j = 1
     while vid.isOpened():
         for i in range(5):
-            (status, frame) = vid.read()
+            (status, (frame, j)) = vid.read()
         detect_frame(cascade, frame, rectifier)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -58,15 +59,14 @@ def detect_vid(cascade, filename, smoothlist=False):
     vid.release()
 
 def detect_picture(cascade, filename):
-
     img = cv2.imread(filename)
     detect_frame(cascade, img)
 
     if cv2.waitKey(0) & 0xFF == ord('q'):
         pass
 
-def detect_frame(cascade, frame, rectifier=None):
-
+def detect_frame(cascade, frame_info, rectifier=None):
+    (frame, frame_num) = frame_info
     scale = 1.0
     MAX_WIDTH = float(700)
     if frame.shape[0] > MAX_WIDTH:
@@ -81,6 +81,8 @@ def detect_frame(cascade, frame, rectifier=None):
     draw_detections(frame, found, 2)
     # draw_detections(frame, found_filtered, 3)
     # print('%d (%d) found' % (len(found_filtered), len(found)))
+    for rectangle in found:
+        q.push(0, rectangle, frame_num, len(found))
 
     cv2.imshow('headhunter', frame)
 
@@ -160,6 +162,7 @@ def get_cascade():
     return cascade
 
 def wait_time_calc():
+    i = 0
     while not q.empty():
         data = q.pop()
         wait_time = 10*data.rect_count
@@ -178,11 +181,10 @@ if __name__ == '__main__':
     import itertools as it
 
 #   print(sys.argv)
-    cascade = get_cascade()
-    detector = detect_vid if sys.argv[1] == "v" else detect_picture
-    detector(cascade, sys.argv[2])
-
     threads = []
     wait_time_thread = threading.Thread(name = "wait_time_calc", target = wait_time_calc)
     threads.append(wait_time_thread)
     wait_time_thread.start()
+    cascade = get_cascade()
+    detector = detect_vid if sys.argv[1] == "v" else detect_picture
+    detector(cascade, sys.argv[2])
