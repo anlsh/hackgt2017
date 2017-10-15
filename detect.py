@@ -31,12 +31,14 @@ class RectangleData:
 
 # https://github.com/opencv/opencv/blob/master/samples/python/peopledetect.py
 def inside(r, q):
+
     rx, ry, rw, rh = r
     qx, qy, qw, qh = q
     return rx > qx and ry > qy and rx + rw < qx + qw and ry + rh < qy + qh
 
 
 def draw_detections(img, rects, thickness = 1):
+
     for x, y, w, h in rects:
         # the HOG detector returns slightly larger boxes than the real objects.
         # so we slightly shrink the boxes to get a nicer output.
@@ -44,6 +46,7 @@ def draw_detections(img, rects, thickness = 1):
         cv2.rectangle(img, (x+pad_w, y+pad_h), (x+w-pad_w, y+h-pad_h), (0, 255, 0), thickness)
 
 def detect_vid(cascade, filename, smoothlist=False):
+
     vid = cv2.VideoCapture()
     vid.open(filename)
 
@@ -52,7 +55,7 @@ def detect_vid(cascade, filename, smoothlist=False):
     while vid.isOpened():
         for i in range(5):
             (status, frame) = vid.read()
-        detect_frame(cascade, (frame, 0), rectifier)
+        detect_frame(cascade, (0, frame), rectifier)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             return
@@ -60,14 +63,16 @@ def detect_vid(cascade, filename, smoothlist=False):
     vid.release()
 
 def detect_picture(cascade, filename):
+
     img = cv2.imread(filename)
-    detect_frame(cascade, img)
+    detect_frame((0, cascade), img)
 
     if cv2.waitKey(0) & 0xFF == ord('q'):
         pass
 
 def detect_frame(cascade, frame_info, rectifier=None):
-    (frame, frame_num) = frame_info
+
+    (frame_num, frame) = frame_info
     scale = 1.0
     MAX_WIDTH = float(700)
     if frame is  None:
@@ -75,15 +80,12 @@ def detect_frame(cascade, frame_info, rectifier=None):
     elif frame.shape[0] > MAX_WIDTH:
         scale = MAX_WIDTH / frame.shape[0]
 
-    #frame = frame[int(frame.shape[0]/2), ]
     frame = cv2.resize(frame, (0,0), fx=scale, fy=scale)
     found = cascade.detectMultiScale(frame, minNeighbors=2, maxSize = (200, 200))
     if rectifier:
         found = rectifier.filter(found)
 
     draw_detections(frame, found, 2)
-    # draw_detections(frame, found_filtered, 3)
-    # print('%d (%d) found' % (len(found_filtered), len(found)))
     for rectangle in found:
         q.put(RectangleData(0, rectangle, frame_num, len(found)))
 
