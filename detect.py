@@ -17,6 +17,7 @@ import cv2
 import Queue
 
 db = TinyDB('db.json')
+db.purge_tables()
 frame_info = db.table('frame_info')
 rectangles = db.table('rectangles')
 q = Queue.Queue()
@@ -69,7 +70,9 @@ def detect_frame(cascade, frame_info, rectifier=None):
     (frame, frame_num) = frame_info
     scale = 1.0
     MAX_WIDTH = float(700)
-    if frame.shape[0] > MAX_WIDTH:
+    if frame is  None:
+        exit()
+    elif frame.shape[0] > MAX_WIDTH:
         scale = MAX_WIDTH / frame.shape[0]
 
     #frame = frame[int(frame.shape[0]/2), ]
@@ -82,7 +85,7 @@ def detect_frame(cascade, frame_info, rectifier=None):
     # draw_detections(frame, found_filtered, 3)
     # print('%d (%d) found' % (len(found_filtered), len(found)))
     for rectangle in found:
-        q.put((0, rectangle, frame_num, len(found)))
+        q.put(RectangleData(0, rectangle, frame_num, len(found)))
 
     cv2.imshow('headhunter', frame)
 
@@ -162,18 +165,16 @@ def get_cascade():
     return cascade
 
 def wait_time_calc():
-    i = 0
-    while not q.empty():
-        data = q.pop()
-        wait_time = 10*data.rect_count
-        if not frame_info.contains(where('frame_id') == data.frame_num):
-            frame_info.insert({'frame_id': data.frame_num, 'num_rectangles': data.rect_count, 'wait_time': wait_time})
+    while True:
+        i = 0
+        while not q.empty():
+            data = q.get()
+            wait_time = 10*data.rect_count
+            if not frame_info.contains(Query()['frame_id'] == data.frame_num):
+                frame_info.insert({'frame_id': data.frame_num, 'num_rectangles': data.rect_count, 'wait_time': wait_time})
 
-        rectangles.insert({'uid': data.uid, 'frame_num': data.frame_num, 'coordinates': data.coordinates})
-        # Use the rect_count variable to calculate a temporary wait time 
-
-    db.purge_tables()
-    db.purge()
+            rectangles.insert({'uid': data.uid, 'frame_num': data.frame_num, 'coordinates': data.coordinates.tolist()})
+            # Use the rect_count variable to calculate a temporary wait time 
 
 if __name__ == '__main__':
     import sys
@@ -183,6 +184,7 @@ if __name__ == '__main__':
 #   print(sys.argv)
     threads = []
     wait_time_thread = threading.Thread(name = "wait_time_calc", target = wait_time_calc)
+    wait_time_thread.daemon = True
     threads.append(wait_time_thread)
     wait_time_thread.start()
     cascade = get_cascade()
