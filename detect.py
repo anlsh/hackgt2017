@@ -81,13 +81,19 @@ def detect_frame(cascade, frame_info, rectifier=None):
         scale = MAX_WIDTH / frame.shape[0]
 
     frame = cv2.resize(frame, (0,0), fx=scale, fy=scale)
-    found = cascade.detectMultiScale(frame, minNeighbors=2, maxSize = (200, 200))
+    raw_boxes = cascade.detectMultiScale(frame, minNeighbors=2, maxSize = (200, 200))
     if rectifier:
-        found = rectifier.filter(found)
+        filtered_boxes = rectifier.filter(raw_boxes)
 
+<<<<<<< 36c8958945382d1276feb30009b02a4a8444a297
     draw_detections(frame, found, 2)
     for rectangle in found:
         q.put(RectangleData(0, rectangle, frame_num, len(found)))
+=======
+    draw_detections(frame, filtered_boxes, 2)
+    for rectangle in filtered_boxes:
+        q.put((0, rectangle, frame_num, len(filtered_boxes)))
+>>>>>>> Formatting, just rename some variables a bit
 
     cv2.imshow('headhunter', frame)
 
